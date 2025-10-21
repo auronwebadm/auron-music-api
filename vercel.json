@@ -1,10 +1,4 @@
 {
-  "builds": [
-    {
-      "src": "api/extract.py",
-      "use": "@vercel/python"
-    }
-  ],
   "routes": [
     {
       "src": "/api/extract",
