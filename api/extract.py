@@ -24,20 +24,23 @@ class handler(BaseHTTPRequestHandler):
         try:
             youtube_url = f"https://www.youtube.com/watch?v={video_id}"
             
-            # ✅ NOVO: Opções avançadas para contornar bloqueios
+            # 🔥 MÁXIMAS OTIMIZAÇÕES SEM BROWSER
             ydl_opts = {
-                'format': 'bestaudio[ext=m4a]/bestaudio',
+                'format': 'bestaudio[ext=m4a]/bestaudio/best',
                 'quiet': True,
                 'no_warnings': True,
                 'extractor_args': {
                     'youtube': {
-                        'player_client': ['android', 'web'],
-                        'skip': ['hls', 'dash']
+                        # Força client mobile (menos restrições)
+                        'player_client': ['android_music', 'android', 'ios'],
+                        'skip': ['hls', 'dash'],
                     }
                 },
-                # User-Agent mais recente
+                # Headers de dispositivo Android real
                 'http_headers': {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                    'User-Agent': 'com.google.android.youtube/19.09.37 (Linux; U; Android 13) gzip',
+                    'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8',
+                    'Accept': '*/*',
                 }
             }
             
