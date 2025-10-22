@@ -2,7 +2,8 @@ from http.server import BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 import yt_dlp
 import json
-import random
+import os
+import tempfile
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -25,37 +26,28 @@ class handler(BaseHTTPRequestHandler):
         try:
             youtube_url = f"https://www.youtube.com/watch?v={video_id}"
             
-            user_agents = [
-                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1'
-            ]
+            # Criar arquivo temporário com cookies
+            cookies_content = os.environ.get('YOUTUBE_COOKIES', '')
+            cookies_file = None
+            
+            if cookies_content:
+                cookies_file = tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.txt')
+                cookies_file.write(cookies_content)
+                cookies_file.close()
             
             ydl_opts = {
                 'format': 'bestaudio[ext=m4a]/bestaudio/best',
                 'quiet': True,
                 'no_warnings': True,
-                'no_check_certificate': True,
-                'geo_bypass': True,
-                'extractor_args': {
-                    'youtube': {
-                        'player_client': ['ios', 'android', 'web'],
-                        'skip': ['hls', 'dash'],
-                    }
-                },
-                'http_headers': {
-                    'User-Agent': random.choice(user_agents),
-                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                    'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
-                    'Accept-Encoding': 'gzip, deflate, br',
-                    'DNT': '1',
-                    'Connection': 'keep-alive',
-                    'Upgrade-Insecure-Requests': '1',
-                },
+                'cookiefile': cookies_file.name if cookies_file else None,
             }
             
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(youtube_url, download=False)
+            
+            # Limpar arquivo temporário
+            if cookies_file:
+                os.unlink(cookies_file.name)
                 
             response = {
                 'success': True,
@@ -68,6 +60,8 @@ class handler(BaseHTTPRequestHandler):
             self.wfile.write(json.dumps(response, ensure_ascii=False).encode('utf-8'))
             
         except Exception as e:
+            if cookies_file:
+                os.unlink(cookies_file.name)
             response = {'success': False, 'error': str(e)}
             self.wfile.write(json.dumps(response).encode())
     
