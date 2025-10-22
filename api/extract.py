@@ -12,6 +12,8 @@ class handler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header('Content-type', 'application/json')
         self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'GET, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
         self.end_headers()
         
         if not video_id:
@@ -22,10 +24,21 @@ class handler(BaseHTTPRequestHandler):
         try:
             youtube_url = f"https://www.youtube.com/watch?v={video_id}"
             
+            # ✅ NOVO: Opções avançadas para contornar bloqueios
             ydl_opts = {
                 'format': 'bestaudio[ext=m4a]/bestaudio',
                 'quiet': True,
-                'no_warnings': True
+                'no_warnings': True,
+                'extractor_args': {
+                    'youtube': {
+                        'player_client': ['android', 'web'],
+                        'skip': ['hls', 'dash']
+                    }
+                },
+                # User-Agent mais recente
+                'http_headers': {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                }
             }
             
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -48,4 +61,6 @@ class handler(BaseHTTPRequestHandler):
     def do_OPTIONS(self):
         self.send_response(200)
         self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'GET, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
         self.end_headers()
